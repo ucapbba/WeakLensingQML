@@ -312,6 +312,7 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
 
   std::cout << "Computing fiducial y_ells now\n";
   // Need a more precise fiducial spectra, so use an order-of-magnitude more maps to compute average from
+  // (num_maps is small here, so this loop isn't worth parallelising)
   for(int i = 0; i < num_maps; ++i)
   {
     // Take copy of fiducial spectrum, as HealPix zeros spectra when setting Cl values
@@ -340,9 +341,16 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
     std::cout << "EB_idx: " << EB_idx << "\n";
 
     std::cout << "ell: ";
+    // Each thread gets its own ComputeCl_EB worker so the CG solver, map buffers, and
+    // RNG state (all mutated during generate_map_EB/compute_y_ell_EB) are never shared
+    #pragma omp parallel for schedule(dynamic)
     for(int ell = 2; ell <= l_max; ++ell)
     {
+      ComputeCl_EB worker(this->cl_datapath, this->mask, this->noise_var);
+      worker.read_in_power_spec_EB();
+
       // Print active ell mode
+      #pragma omp critical(ell_print)
       std::cout << ell << " " << std::flush;
 
       // Create an array for our y_ell values for our injected power modes
@@ -350,18 +358,18 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
       y_ells_var.fill(0);
 
       // The amount of power we're going to inject into our active ell mode
-      const auto delta_cl = cl_mult_fact * cl_EE_arr[ell];
+      const auto delta_cl = cl_mult_fact * worker.cl_EE_arr[ell];
 
       // Generate an ensemble of maps to average over
       for(int i = 0; i < num_maps; ++i)
       {
         // Take a copy of our fiducial spectrum and inject power at our active ell mode
-        auto cl_TT_arr_fid = cl_TT_arr;
-        auto cl_EE_arr_tmp = cl_EE_arr;
-        auto cl_BB_arr_tmp = cl_BB_arr;
-        auto cl_TE_arr_fid = cl_TE_arr;
-        auto cl_TB_arr_fid = cl_TB_arr;
-        auto cl_EB_arr_tmp = cl_EB_arr;
+        auto cl_TT_arr_fid = worker.cl_TT_arr;
+        auto cl_EE_arr_tmp = worker.cl_EE_arr;
+        auto cl_BB_arr_tmp = worker.cl_BB_arr;
+        auto cl_TE_arr_fid = worker.cl_TE_arr;
+        auto cl_TB_arr_fid = worker.cl_TB_arr;
+        auto cl_EB_arr_tmp = worker.cl_EB_arr;
 
         if(EB_idx == 0)
         {
@@ -380,16 +388,16 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
         }
 
         // Generate a map using this injected power spectrum
-        this->generate_map_EB(cl_TT_arr_fid, cl_EE_arr_tmp, cl_BB_arr_tmp, cl_TE_arr_fid, cl_TB_arr_fid, cl_EB_arr_tmp);
+        worker.generate_map_EB(cl_TT_arr_fid, cl_EE_arr_tmp, cl_BB_arr_tmp, cl_TE_arr_fid, cl_TB_arr_fid, cl_EB_arr_tmp);
 
         // Compute the y_ell values for our new map
-        this->compute_y_ell_EB(y_ells_var);
+        worker.compute_y_ell_EB(y_ells_var);
       }
 
       // Average the y_ells by dividing through by the number of maps in the average
       y_ells_var /= num_maps;
 
-      // Set the elements of the Fisher matrix accordingly
+      // Set the elements of the Fisher matrix accordingly (each thread writes a distinct column, so this is race-free)
 //      this->F_mat((ell - 2) + (EB_idx * num_l_modes), Eigen::all) += (y_ells_var - y_ells_fid) / delta_cl;
       this->F_mat(Eigen::all, (ell - 2) + (EB_idx * num_l_modes)) += (y_ells_var - y_ells_fid) / delta_cl;
     }

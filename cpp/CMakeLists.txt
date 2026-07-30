@@ -1,19 +1,32 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.15)
-PROJECT(ConjGrad_Eigen)
+PROJECT(ConjGrad_Eigen LANGUAGES CXX)
+
 SET(CMAKE_CXX_STANDARD 17)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_EXTENSIONS OFF)
 
-# Include Eigen
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  "/home/maraio/Codes/eigen-3.4.0/build_install/share/eigen3/cmake/")
-INCLUDE_DIRECTORIES("/home/maraio/Codes/eigen-3.4.0/build_install/include/eigen3/")
-FIND_PACKAGE(Eigen3 REQUIRED)
-
-# Include HealPix
-INCLUDE_DIRECTORIES("/home/maraio/Codes/Healpix_3.70/include/healpix_cxx/")
-LINK_DIRECTORIES("/home/maraio/Codes/Healpix_3.70/lib/")
-LINK_LIBRARIES(healpix_cxx)
-
-# Set compilation flags to highest available optimisation settings
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -flto -Wall -Wextra -fopenmp")
+FIND_PACKAGE(Eigen3 REQUIRED NO_MODULE)
+FIND_PACKAGE(PkgConfig REQUIRED)
+PKG_CHECK_MODULES(HEALPIX REQUIRED IMPORTED_TARGET healpix_cxx)
+FIND_PACKAGE(OpenMP REQUIRED)
 
 ADD_EXECUTABLE(QMLShearExe main.cpp)
+TARGET_INCLUDE_DIRECTORIES(QMLShearExe PRIVATE ${EIGEN3_INCLUDE_DIRS})
+TARGET_LINK_LIBRARIES(QMLShearExe PRIVATE PkgConfig::HEALPIX OpenMP::OpenMP_CXX)
+TARGET_COMPILE_OPTIONS(QMLShearExe PRIVATE -Wall -Wextra -fopenmp
+        $<$<CONFIG:Debug>:-Og -g>
+        $<$<NOT:$<CONFIG:Debug>>:-O3>)
+
 ADD_LIBRARY(QMLShearLib SHARED py_library.cpp)
+TARGET_INCLUDE_DIRECTORIES(QMLShearLib PRIVATE ${EIGEN3_INCLUDE_DIRS})
+TARGET_LINK_LIBRARIES(QMLShearLib PRIVATE PkgConfig::HEALPIX OpenMP::OpenMP_CXX)
+TARGET_COMPILE_OPTIONS(QMLShearLib PRIVATE -Wall -Wextra -fopenmp
+        $<$<CONFIG:Debug>:-Og -g>
+        $<$<NOT:$<CONFIG:Debug>>:-O3>)
+
+SET_TARGET_PROPERTIES(QMLShearLib PROPERTIES OUTPUT_NAME "QMLShearLib")
+SET_TARGET_PROPERTIES(QMLShearExe PROPERTIES OUTPUT_NAME "QMLShearExe")
+
+INSTALL(TARGETS QMLShearLib QMLShearExe
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin)

@@ -28,10 +28,10 @@ constexpr auto num_l_modes = l_max - 1;
 constexpr int n_hp_iter = 3;
 
 // The tolerance used in the conjugate-gradient algorithm
-constexpr auto conj_grad_tol = 1e-6;
+constexpr auto conj_grad_tol = 1e-5;
 
 // The number of maps to average over
-constexpr auto num_maps = 25;
+constexpr auto num_maps = 20;
 
 // The factor to multiply the active ell mode when estimating the Fisher matrix
 constexpr auto cl_mult_fact = 1e7;

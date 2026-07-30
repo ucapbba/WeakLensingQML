@@ -26,6 +26,17 @@ a space-based Stage-IV galaxy survey, computing an example power spectrum for co
 for this mask & power spectrum, and then finally estimating the power spectrum for a set of cosmic shear maps.
 Using this notebook, it should be easy to extend this to whatever way the user sees fit. 
 
+## Building the native C++ library
+
+The notebook uses a compiled shared library from the C++ component. Build it from the repository root with:
+
+```bash
+cmake -S cpp -B cpp/build
+cmake --build cpp/build -j2
+```
+
+This produces the shared library used by the notebook at [cpp/build/libQMLShearLib.so](cpp/build/libQMLShearLib.so).
+
 
 ## Publications
 

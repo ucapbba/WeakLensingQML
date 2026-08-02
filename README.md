@@ -38,6 +38,28 @@ cmake --build cpp/build -j2
 This produces the shared library used by the notebook at [cpp/build/libQMLShearLib.so](cpp/build/libQMLShearLib.so).
 
 
+## GPU acceleration (optional)
+
+The dense covariance-matrix build/inversion in `python/lib/PreProcessing/QMLClass.py` (`compute_covariance_matrix`,
+`compute_cov_inv_Y`, `compute_Y_cov_inv_Y`) runs on the GPU via [cupy](https://cupy.dev/) if it's installed and a
+GPU is available, and falls back to plain NumPy otherwise. No code changes or extra environment variables are
+needed either way.
+
+To use the GPU path:
+
+```bash
+# Pick the cupy wheel matching your CUDA toolkit version, e.g.:
+pip install cupy-cuda12x
+```
+
+To verify the covariance-matrix maths is unaffected by which backend is used (safe to run with or without a GPU):
+
+```bash
+pip install pytest
+pytest python/tests/test_qml_gpu_backend.py -v
+```
+
+
 ## Publications
 
 The algorithms and implementation is detailed in Maraio, Hall, and Taylor 2022

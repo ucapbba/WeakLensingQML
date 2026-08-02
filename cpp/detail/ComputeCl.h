@@ -312,24 +312,34 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
 
   std::cout << "Computing fiducial y_ells now\n";
   // Need a more precise fiducial spectra, so use an order-of-magnitude more maps to compute average from
-  // (num_maps is small here, so this loop isn't worth parallelising)
+  #pragma omp parallel for schedule(dynamic)
   for(int i = 0; i < num_maps; ++i)
   {
+    ComputeCl_EB worker(this->cl_datapath, this->mask, this->noise_var);
+    worker.read_in_power_spec_EB();
+
     // Take copy of fiducial spectrum, as HealPix zeros spectra when setting Cl values
-    auto cl_TT_arr_fid = cl_TT_arr;
-    auto cl_EE_arr_fid = cl_EE_arr;
-    auto cl_BB_arr_fid = cl_BB_arr;
-    auto cl_TE_arr_fid = cl_TE_arr;
-    auto cl_TB_arr_fid = cl_TB_arr;
-    auto cl_EB_arr_fid = cl_EB_arr;
+    auto cl_TT_arr_fid = worker.cl_TT_arr;
+    auto cl_EE_arr_fid = worker.cl_EE_arr;
+    auto cl_BB_arr_fid = worker.cl_BB_arr;
+    auto cl_TE_arr_fid = worker.cl_TE_arr;
+    auto cl_TB_arr_fid = worker.cl_TB_arr;
+    auto cl_EB_arr_fid = worker.cl_EB_arr;
 
     // Generate a random realisation of the map
-    this->generate_map_EB(cl_TT_arr_fid, cl_EE_arr_fid, cl_BB_arr_fid, cl_TE_arr_fid, cl_TB_arr_fid, cl_EB_arr_fid);
+    worker.generate_map_EB(cl_TT_arr_fid, cl_EE_arr_fid, cl_BB_arr_fid, cl_TE_arr_fid, cl_TB_arr_fid, cl_EB_arr_fid);
 
-    // Use this map to compute a set of y_ell values
-    const auto ret_val = this->compute_y_ell_EB(y_ells_fid);
+    // Use this map to compute a set of y_ell values; on CG failure, regenerate the map and
+    // retry in place, since the loop index can't be rewound inside a parallel for
+    Eigen::Vector<precision, 3 * num_l_modes> y_ells_local;
+    y_ells_local.fill(0);
+    while(worker.compute_y_ell_EB(y_ells_local))
+    {
+      worker.generate_map_EB(cl_TT_arr_fid, cl_EE_arr_fid, cl_BB_arr_fid, cl_TE_arr_fid, cl_TB_arr_fid, cl_EB_arr_fid);
+    }
 
-    if(ret_val) --i;
+    #pragma omp critical(fid_accum)
+    y_ells_fid += y_ells_local;
   }
   y_ells_fid /= num_maps;
 

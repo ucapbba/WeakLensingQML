@@ -14,6 +14,19 @@ import seaborn as sns
 # from .Enums import SpecType
 # from .Field import Field
 
+# Use cupy for the large dense covariance-matrix algebra when a GPU is available, else fall back to numpy
+try:
+    import cupy as xp
+    _GPU_AVAILABLE = bool(xp.cuda.runtime.getDeviceCount())
+except Exception:
+    import numpy as xp
+    _GPU_AVAILABLE = False
+
+
+def _to_host(array):
+    # Bring an array back to a plain NumPy array once GPU work is done
+    return xp.asnumpy(array) if _GPU_AVAILABLE else array
+
 
 sns.set(font_scale=1.2, rc={'text.usetex': True})
 mpl.rcParams["savefig.dpi"] = 250
@@ -261,37 +274,49 @@ class QML:
         # Y_matrix_UB = self.Y_matrix[self.n_pix_mask: 2 * self.n_pix_mask, self.num_m_modes: 2 * self.num_m_modes]
 
         print('Computing signal matrices')
+        # Move the dense matmul/inversion work onto the GPU (via cupy) when one is available
+        Y_matrix_QE = xp.asarray(Y_matrix_QE)
+        Y_matrix_UE = xp.asarray(Y_matrix_UE)
+        S_tilde_EE = xp.asarray(self.S_tilde_EE)
+
         # Polarisation-only signal matrices
-        S_matrix_QQ = (Y_matrix_QE * self.S_tilde_EE @ np.conj(Y_matrix_QE).T).real
-        S_matrix_QU = (Y_matrix_QE * self.S_tilde_EE @ np.conj(Y_matrix_UE).T).real
-        S_matrix_UU = (Y_matrix_UE * self.S_tilde_EE @ np.conj(Y_matrix_UE).T).real
+        S_matrix_QQ = (Y_matrix_QE * S_tilde_EE @ xp.conj(Y_matrix_QE).T).real
+        S_matrix_QU = (Y_matrix_QE * S_tilde_EE @ xp.conj(Y_matrix_UE).T).real
+        S_matrix_UU = (Y_matrix_UE * S_tilde_EE @ xp.conj(Y_matrix_UE).T).real
 
         print('Initialising the covariance matrix')
-        self.cov = np.zeros([2 * self.n_pix_mask, 2 * self.n_pix_mask], dtype=float)
+        cov = xp.zeros([2 * self.n_pix_mask, 2 * self.n_pix_mask], dtype=float)
 
         print('Setting the elements of the covariance matrix')
-        self.cov[0: self.n_pix_mask, 0: self.n_pix_mask] = S_matrix_QQ
-        self.cov[0: self.n_pix_mask, self.n_pix_mask: 2 * self.n_pix_mask] = S_matrix_QU
-        self.cov[self.n_pix_mask: 2 * self.n_pix_mask, 0: self.n_pix_mask] = S_matrix_QU.T
-        self.cov[self.n_pix_mask: 2 * self.n_pix_mask, self.n_pix_mask: 2 * self.n_pix_mask] = S_matrix_UU
+        cov[0: self.n_pix_mask, 0: self.n_pix_mask] = S_matrix_QQ
+        cov[0: self.n_pix_mask, self.n_pix_mask: 2 * self.n_pix_mask] = S_matrix_QU
+        cov[self.n_pix_mask: 2 * self.n_pix_mask, 0: self.n_pix_mask] = S_matrix_QU.T
+        cov[self.n_pix_mask: 2 * self.n_pix_mask, self.n_pix_mask: 2 * self.n_pix_mask] = S_matrix_UU
 
         # Add the noise matrix to the covariance matrix
-        np.fill_diagonal(self.cov, self.cov.diagonal() + self.noise_array)
+        xp.fill_diagonal(cov, cov.diagonal() + xp.asarray(self.noise_array))
 
         print('Inverting the covariance matrix')
-        self.cov_inv = np.linalg.inv(self.cov)
+        cov_inv = xp.linalg.inv(cov)
 
         # Check that the covariance matrix has been inverted successfully
-        print(self.cov[0, :] @ self.cov_inv[:, 0] - 1)
-        print(self.cov[0, :] @ self.cov_inv[:, 1])
+        print(_to_host(cov[0, :] @ cov_inv[:, 0] - 1))
+        print(_to_host(cov[0, :] @ cov_inv[:, 1]))
+
+        self.cov = _to_host(cov)
+        self.cov_inv = _to_host(cov_inv)
 
     def compute_cov_inv_Y(self):
         print('Evaluating C^-1 @ Y')
-        self.cov_inv_Y = self.cov_inv @ self.Y_matrix
+        cov_inv = xp.asarray(self.cov_inv)
+        Y_matrix = xp.asarray(self.Y_matrix)
+        self.cov_inv_Y = _to_host(cov_inv @ Y_matrix)
 
     def compute_Y_cov_inv_Y(self):
         print('Evaluating Y.H @ C^-1 @ Y')
-        self.Y_dagger_cov_inv_Y = np.conj(self.Y_matrix).T @ self.cov_inv_Y
+        Y_matrix = xp.asarray(self.Y_matrix)
+        cov_inv_Y = xp.asarray(self.cov_inv_Y)
+        self.Y_dagger_cov_inv_Y = _to_host(xp.conj(Y_matrix).T @ cov_inv_Y)
 
     def F_idx(self, ell, offset):
         return (ell - 2) + (offset * self.num_l_modes)

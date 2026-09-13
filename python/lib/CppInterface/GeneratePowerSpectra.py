@@ -40,7 +40,7 @@ class PowerSpec:
         Cl_EE = ccl.angular_cl(cosmo, field_E, field_E, self.ells)
 
         # Add two sets of zeros for ell=0 and ell=1
-        self.cl_EE = np.concatenate([[0, 0], Cl_EE.copy()])
+        self.cl_EE = np.concatenate([[0, 0], Cl_EE])
 
         # Save the EE theory spectra to a file
         np.savetxt(self.file_path, self.cl_EE.T)

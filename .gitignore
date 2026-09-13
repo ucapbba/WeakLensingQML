@@ -125,3 +125,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Project data / pipeline artifacts
+data
+TR1/data
+TR1/pipeline_input
+TR1/pipeline_output
+TR1/catalog.fits
+TR1/vmap.fits.gz
+TR1/nz.npz
+Map_N*
+cpp/buildDELETTEMEMEEE
+cpp/build-release

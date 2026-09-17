@@ -10,16 +10,16 @@
 using precision = double;
 
 // The N_side parameter of our maps
-constexpr auto n_side = 64;
+constexpr auto n_side = 256;
 
 // The number of pixels in our unmasked maps
 constexpr auto n_pix = 12 * n_side * n_side;
 
 // The number of pixels in our masked maps
-constexpr auto n_pix_mask = 17308;
+constexpr auto n_pix_mask = 2916;
 
 // The maximum ell mode to consider when performing alm expansions
-constexpr auto l_max = 3 * n_side - 1;
+constexpr auto l_max = 750;
 
 // Number of ell modes, from ell=2 up to and including ell=l_max
 constexpr auto num_l_modes = l_max - 1;
@@ -37,7 +37,7 @@ constexpr auto num_maps = 20;
 constexpr auto cl_mult_fact = 1e7;
 
 // The noise variance
-constexpr auto noise_var = 4.86520223622195e-06;
+constexpr auto noise_var = 0.00011848468270517348;
 
 // Terminal colours
 constexpr auto TERM_RESET = "\033[0m";

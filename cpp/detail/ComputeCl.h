@@ -315,7 +315,7 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
 
   std::cout << "Computing fiducial y_ells now\n";
   // Need a more precise fiducial spectra, so use an order-of-magnitude more maps to compute average from
-  #pragma omp parallel for schedule(dynamic)
+  #pragma omp parallel for schedule(dynamic) num_threads(10)
   for(int i = 0; i < num_maps; ++i)
   {
     ComputeCl_EB worker(this->cl_datapath, this->mask, this->noise_var);
@@ -356,7 +356,7 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
     std::cout << "ell: ";
     // Each thread gets its own ComputeCl_EB worker so the CG solver, map buffers, and
     // RNG state (all mutated during generate_map_EB/compute_y_ell_EB) are never shared
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(dynamic) num_threads(10)
     for(int ell = 2; ell <= l_max; ++ell)
     {
       ComputeCl_EB worker(this->cl_datapath, this->mask, this->noise_var);

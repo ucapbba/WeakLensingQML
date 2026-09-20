@@ -6,7 +6,10 @@ combination of n_arcmin2 in (1, 10, 20) and (galactic, ecliptic) colatitude cut 
 realisation is computed once and reused across all combinations (footprint and galaxy
 density only affect galaxy sampling, not the underlying fields). Runs sequentially in a
 single process - no multiprocessing.
+
+Usage: python3 glass_fullsky_simulation_grid.py [--nside N]
 """
+import argparse
 import sys
 
 import numpy as np
@@ -21,6 +24,10 @@ import glass.ext.camb
 
 root_filepath = '/home/vscode/WeakLensingQML'
 sys.path.append(root_filepath)
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--nside', type=int, default=64)
+args = parser.parse_args()
 
 rng = np.random.default_rng(seed=42)
 
@@ -45,7 +52,7 @@ results = camb.get_background(pars)
 cosmo = Cosmology(results)
 
 # Resolution and matter shells
-nside = lmax = 64
+nside = lmax = args.nside
 
 # shells of 200 Mpc in comoving distance spacing, out to z=3
 zb = glass.distance_grid(cosmo, 0.0, 3.0, dx=200.0)

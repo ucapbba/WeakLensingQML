@@ -1,4 +1,4 @@
-"""Run the QML/PCl/heracles pipeline for a single (n_arcmin2, footprint) combo.
+"""Run the QML/PCl/heracles pipeline for a single (n_side, n_arcmin2, footprint) combo.
 
 Invoked as its own subprocess (one per combo) by examples/qml_grid_pipeline.py, rather than
 being loaded in-process for all 9 combos: relinking cpp/build-release/libQMLShearLib.so against
@@ -8,7 +8,7 @@ corruption (`malloc(): unsorted double linked list corrupted`) the first time th
 therefore n_pix_mask) changed. A fresh process per combo guarantees only one build of the library
 is ever loaded at a time.
 
-Usage: python3 qml_grid_pipeline_worker.py <n_arcmin2> <lo> <hi>
+Usage: python3 qml_grid_pipeline_worker.py <n_side> <n_arcmin2> <lo> <hi>
 """
 import os
 import subprocess
@@ -33,7 +33,7 @@ from python.lib.CppInterface.CppLib import CppLib
 glass_filepath = f'{root_filepath}/data'
 tom_bin = 1
 
-n_side = 64
+n_side = int(sys.argv[1])
 n_pix = 12 * n_side * n_side
 l_max = 2 * n_side
 ells = np.arange(2, l_max + 1)
@@ -46,7 +46,8 @@ build_dir = f'{root_filepath}/cpp/build-release'
 constants_h_path = f'{root_filepath}/cpp/detail/constants.h'
 lib_path = f'{build_dir}/libQMLShearLib.so'
 
-results_dir = f'{glass_filepath}/qml_grid_results'
+# Keep the original directory name for the already-published n_side=64 results
+results_dir = f'{glass_filepath}/qml_grid_results' if n_side == 64 else f'{glass_filepath}/qml_grid_results_N{n_side}'
 os.makedirs(results_dir, exist_ok=True)
 
 intrinsic_gal_ellip = 0.3
@@ -190,4 +191,4 @@ def main(n_arcmin2, lo, hi):
 
 
 if __name__ == '__main__':
-    main(float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
+    main(float(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))

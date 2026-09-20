@@ -10,16 +10,16 @@
 using precision = double;
 
 // The N_side parameter of our maps
-constexpr auto n_side = 256;
+constexpr auto n_side = 128;
 
 // The number of pixels in our unmasked maps
 constexpr auto n_pix = 12 * n_side * n_side;
 
 // The number of pixels in our masked maps
-constexpr auto n_pix_mask = 2916;
+constexpr auto n_pix_mask = 106608;
 
 // The maximum ell mode to consider when performing alm expansions
-constexpr auto l_max = 750;
+constexpr auto l_max = 383;
 
 // Number of ell modes, from ell=2 up to and including ell=l_max
 constexpr auto num_l_modes = l_max - 1;
@@ -31,13 +31,13 @@ constexpr int n_hp_iter = 3;
 constexpr auto conj_grad_tol = 1e-5;
 
 // The number of maps to average over
-constexpr auto num_maps = 20;
+constexpr auto num_maps = 10;
 
 // The factor to multiply the active ell mode when estimating the Fisher matrix
 constexpr auto cl_mult_fact = 1e7;
 
 // The noise variance
-constexpr auto noise_var = 0.00011848468270517348;
+constexpr auto noise_var = 6.057647842526249e-06;
 
 // Terminal colours
 constexpr auto TERM_RESET = "\033[0m";

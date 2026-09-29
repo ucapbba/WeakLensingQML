@@ -43,8 +43,19 @@ def make_grid_figures(n_side, results_dir, tag):
         for lo, hi in footprints:
             combo_tag = f'ngal{n_arcmin2:g}_fp{lo}_{hi}'
             with np.load(f'{results_dir}/results_{combo_tag}.npz') as npz:
-                results[(n_arcmin2, (lo, hi))] = {key: npz[key] for key in npz.files}
-    print(f'[N{n_side}] loaded {len(results)} result files')
+                data = {key: npz[key] for key in npz.files}
+
+            # The GLASS simulation itself was generated with lmax=n_side
+            # (glass_fullsky_simulation_grid.py), so ell > n_side carries no real signal -
+            # crop every per-ell array to the range the input maps actually have power in.
+            n_ell_full = len(data['ells'])
+            keep = data['ells'] <= n_side
+            for key, val in data.items():
+                if np.ndim(val) == 1 and len(val) == n_ell_full:
+                    data[key] = val[keep]
+
+            results[(n_arcmin2, (lo, hi))] = data
+    print(f'[N{n_side}] loaded {len(results)} result files, cropped to ell <= {n_side}')
 
     # --- sigma ratio ---
     fig, axes = plt.subplots(len(n_arcmin2_values), len(footprints),

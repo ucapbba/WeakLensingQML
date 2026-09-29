@@ -30,7 +30,7 @@ class CppLib:
         self.lib.compute_fisher_matrix(self.mask_path.encode(), self.cl_data_path.encode(),
                                        fisher_matrix_out_path.encode())
 
-    def compute_power_spectrum(self, map_gamma1_path, map_gamma2_path, y_ell_output_path):
+    def v(self, map_gamma1_path, map_gamma2_path, y_ell_output_path):
         """
         Function to compute the set of y_ell values using our C++ code for a gamma_1 and gamma_2 maps that are given
         as inputs and store them at the location given by the output_path

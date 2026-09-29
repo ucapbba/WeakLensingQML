@@ -137,3 +137,7 @@ TR1/nz.npz
 Map_N*
 cpp/buildDELETTEMEMEEE
 cpp/build-release
+report/QML_GLASS_report.toc
+report/QML_GLASS_report.out
+examples/full_weights
+examples/pixel_window_functions

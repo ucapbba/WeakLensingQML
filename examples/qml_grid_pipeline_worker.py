@@ -46,6 +46,12 @@ build_dir = f'{root_filepath}/cpp/build-release'
 constants_h_path = f'{root_filepath}/cpp/detail/constants.h'
 lib_path = f'{build_dir}/libQMLShearLib.so'
 
+# Optionally offload the (expensive) Fisher matrix to a remote machine via cpp/run_remote_fisher.sh,
+# e.g. QML_REMOTE_HOST=bradley@192.168.1.105 QML_REMOTE_DIR=qml_remote. Unset = run it locally.
+remote_host = os.environ.get('QML_REMOTE_HOST')
+remote_dir = os.environ.get('QML_REMOTE_DIR', 'qml_remote')
+remote_fisher_script = f'{root_filepath}/cpp/run_remote_fisher.sh'
+
 # Keep the original directory name for the already-published n_side=64 results
 results_dir = f'{glass_filepath}/qml_grid_results' if n_side == 64 else f'{glass_filepath}/qml_grid_results_N{n_side}'
 os.makedirs(results_dir, exist_ok=True)
@@ -111,7 +117,16 @@ def main(n_arcmin2, lo, hi):
 
     fisher_matrix_out = f'{glass_filepath}/Fisher_matrix_N{n_side}_glass_{combo_tag}.dat'
     start_time = time.time()
-    cpp_lib.compute_fisher_matrix(fisher_matrix_out)
+    if os.path.exists(fisher_matrix_out):
+        # Already computed for this combo (e.g. by an earlier, interrupted run) - reuse it
+        print(f'Reusing existing Fisher matrix {fisher_matrix_out}', flush=True)
+    elif remote_host:
+        # The remote script syncs cpp/ (including the constants.h just generated above for this
+        # combo), rebuilds there, and copies the Fisher matrix back to fisher_matrix_out
+        subprocess.run(['bash', remote_fisher_script, remote_host, remote_dir,
+                        mask_filepath, cl_file_path, fisher_matrix_out], check=True)
+    else:
+        cpp_lib.compute_fisher_matrix(fisher_matrix_out)
     print(f'Fisher matrix computation took {(time.time() - start_time):,.1f} seconds', flush=True)
 
     fisher_matrix_QML = np.loadtxt(fisher_matrix_out)

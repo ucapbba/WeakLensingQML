@@ -1,0 +1,95 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt}
+
+\title{QML on TR1 South: summary}
+\author{Weak Lensing QML pipeline}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section*{What we did}
+\begin{itemize}
+\item Applied the QML power-spectrum estimator (Maraio, Hall \& Taylor 2022) to the real \textbf{TR1 South} shear
+catalogue, at $N_{\rm side}=64$.
+\item \textbf{All six tomographic bins combined} into one sample (21.9 galaxies/arcmin$^2$), because single bins
+(3--4 galaxies/arcmin$^2$) are much noisier.
+\item Compared QML with two other estimators on the same data: \textbf{NaMaster} (pseudo-$C_\ell$) and
+\textbf{heracles}, run directly on the catalogue.
+\item The patch is small, 0.9\% of the sky (about $20^\circ$ across), so the spectra are measured in bands of
+$\Delta\ell=20$.
+\end{itemize}
+
+\section*{1. Pixels removed}
+\begin{itemize}
+\item Many pixels on the edge of the survey, and along gaps inside it, are only partly covered. They contain few
+galaxies, so they are much noisier than the rest: up to $\sim$13{,}000 times the average.
+\item QML assumes \textbf{every pixel has the same noise}, so these pixels ruined the QML result.
+\item We keep only pixels that are \textbf{at least 50\% covered}. This removes 96 of 538 pixels, but only 5\% of the
+galaxies.
+\item With the cut, QML works. heracles gives almost the same answer with or without the cut, because it already
+down-weights partly covered pixels.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{summary_figures/pixels.png}
+\caption{Left: pixels kept (blue) and removed (orange). Right: how much of each pixel is covered; the line is the
+50\% cut.}
+\end{figure}
+
+\section*{2. E-modes: all three estimators agree}
+QML, NaMaster and heracles all follow the expected (fiducial) spectrum.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{summary_figures/ee.png}
+\caption{TR1 South $E$-mode power spectrum from QML, NaMaster and heracles, with the fiducial model.}
+\end{figure}
+
+\section*{3. QML has smaller error bars}
+\begin{itemize}
+\item The plot shows NaMaster's error bars divided by QML's. Above 1, QML is more precise.
+\item On large scales ($\ell\approx20$), QML's errors are \textbf{about 3 times smaller for E-modes} and
+\textbf{about 28 times smaller for B-modes}.
+\item The two become similar by $\ell\approx100$, as the QML paper predicts: QML's advantage is on large scales.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{summary_figures/sigma.png}
+\caption{Ratio of NaMaster to QML error bars, for E-modes (blue) and B-modes (green).}
+\end{figure}
+
+\section*{4. B-modes}
+\begin{itemize}
+\item Weak lensing produces essentially no B-modes, so the measured B-modes should just be noise. Anything above the
+noise points to leakage or a systematic.
+\item On large scales ($\ell\lesssim50$), \textbf{QML stays close to the noise level}, while NaMaster and heracles are
+about 10 times higher. That excess is E-mode power leaking into B through the small, irregular mask, which QML avoids.
+\item At $\ell\gtrsim110$ all three estimators are somewhat above the noise. Because all three see it, it is in the
+data or the pixelisation, not in QML. It is still an open question.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{summary_figures/bb.png}
+\caption{TR1 South $B$-mode power spectrum from QML, NaMaster and heracles, with the noise level.}
+\end{figure}
+
+\section*{Next steps}
+\begin{itemize}
+\item \textbf{Variable noise in QML:} give QML the noise of each pixel instead of one average value. Then no pixels
+need removing, and QML handles the coverage the way heracles already does.
+\item \textbf{Per-bin analysis:} repeat for each tomographic bin separately.
+\end{itemize}
+
+\end{document}

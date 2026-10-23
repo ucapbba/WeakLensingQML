@@ -3,7 +3,18 @@ File to generate the C++ constants.h file that's necessary for our C++ code
 """
 
 
-def generate_constants_h(n_side, mask, noise_var, num_maps, output_file_path):
+def generate_constants_h(n_side, mask, noise_var, num_maps, output_file_path, l_max=None):
+    """
+    l_max defaults to 3 * n_side - 1 (the HEALPix-limited maximum), but can be set
+    independently and lower than that. This is necessary for small survey masks (few
+    unmasked pixels) where the default l_max would make the pixel covariance matrix
+    dramatically under-determined/ill-conditioned relative to the number of unmasked
+    pixels, causing the conjugate-gradient solver to converge extremely slowly or not
+    at all.
+    """
+    if l_max is None:
+        l_max = 3 * n_side - 1
+
     constants_text = fr"""
 //
 // Created by amaraio on 22/09/2021.
@@ -25,7 +36,7 @@ constexpr auto n_pix = 12 * n_side * n_side;
 constexpr auto n_pix_mask = {int(mask.sum())};
 
 // The maximum ell mode to consider when performing alm expansions
-constexpr auto l_max = 3 * n_side - 1;
+constexpr auto l_max = {int(l_max)};
 
 // Number of ell modes, from ell=2 up to and including ell=l_max
 constexpr auto num_l_modes = l_max - 1;

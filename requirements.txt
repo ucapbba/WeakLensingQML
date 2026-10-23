@@ -1,0 +1,55 @@
+# Python requirements for the QML / GLASS / TR1 notebooks and scripts (Python 3.10).
+#
+# Install into a local virtual environment (as used for the notebooks' ".venv" kernel):
+#   uv venv --python 3.10 .venv
+#   FITSIO_USE_SYSTEM_FITSIO=1 CONFIG_SITE=<file containing "build_alias=$(uname -m)-unknown-linux-gnu"> \
+#       uv pip install --python .venv/bin/python -r requirements.txt
+# FITSIO_USE_SYSTEM_FITSIO links fitsio against the system cfitsio (its bundled copy fails to patch on aarch64), and
+# CONFIG_SITE lets the healpix package's bundled C library configure on aarch64. System packages needed (see
+# .devcontainer/Dockerfile): cmake, pkg-config, libeigen3-dev, libgsl-dev, libcfitsio-dev, libhealpix-cxx-dev, libfftw3-dev.
+array-api-compat==1.15.0
+array-api-extra==0.9.2
+astropy==6.1.7
+astropy-iers-data==0.2026.7.27.0.56.29
+bokeh==3.9.2
+camb==2.0.4
+convolvecl==2022.5.10
+coroutines==0.3.0
+cosmology==2022.10.9
+cosmology.api==0.3.2
+cosmology.compat.camb==0.2.0
+ducc0==0.41.0
+fitsio==1.4.2
+flt==2026.1
+GitPython==3.1.47
+glass==2026.1
+glass.ext.camb==2023.6
+healpix==2025.1
+healpy==1.20.0
+heracles==25.1
+ipykernel==7.3.0
+ipython==8.39.0
+matplotlib==3.10.9
+mollview==1.0.0
+nbconvert==7.17.2
+numba==0.66.0
+numpy==2.2.6
+pandas==2.3.3
+panel==1.9.3
+panel-material-ui==0.14.1
+pymupdf==1.28.2
+pyccl==3.3.6
+pymaster==3.0
+pymp==0.0.6
+pytest==9.1.1
+pyviz_comms==3.0.6
+quaternionic==1.0.17
+scipy==1.15.3
+seaborn==0.13.2
+spherical==1.1.4
+spinsfast==2022.4.11
+sympy==1.14.0
+threej==2022.4.1
+transformcl==2026.1
+typer==0.7.0
+xyzservices==2026.3.0

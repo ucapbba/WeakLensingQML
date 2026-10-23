@@ -1,0 +1,102 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch QMLShearExe",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/vscode/WeakLensingQML/cpp/build/QMLShearExe",
+            "cwd": "/home/vscode/WeakLensingQML/cpp/build",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Skip broken split debug info (libc6-dbg) that makes gdb extremely slow",
+                    "text": "set debug-file-directory \"\"",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Don't step into Eigen's expression-template internals (extremely slow at -Og)",
+                    "text": "skip -rfunction ^Eigen::",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Don't step into Eigen headers by file either",
+                    "text": "skip -gfi /usr/include/eigen3/*",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Stop gdb printing/pausing on every background signal (glibc thread housekeeping, timers) - main cause of slow stepping when attached to a threaded process",
+                    "text": "handle all nostop noprint pass",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Still stop on real crashes",
+                    "text": "handle SIGSEGV SIGABRT SIGFPE SIGILL SIGBUS stop print",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Keep normal Ctrl-C behaviour",
+                    "text": "handle SIGINT stop print nopass",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Attach to Jupyter kernel",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/usr/local/bin/python3",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Resolve breakpoints in the shared library once it is loaded",
+                    "text": "set breakpoint pending on",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Skip broken split debug info (libc6-dbg) that makes gdb extremely slow",
+                    "text": "set debug-file-directory \"\"",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Don't step into Eigen's expression-template internals (extremely slow at -Og)",
+                    "text": "skip -rfunction ^Eigen::",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Don't step into Eigen headers by file either",
+                    "text": "skip -gfi /usr/include/eigen3/*",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Stop gdb printing/pausing on every background signal (glibc thread housekeeping, timers) - main cause of slow stepping when attached to a threaded process",
+                    "text": "handle all nostop noprint pass",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Still stop on real crashes",
+                    "text": "handle SIGSEGV SIGABRT SIGFPE SIGILL SIGBUS stop print",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Keep normal Ctrl-C behaviour",
+                    "text": "handle SIGINT stop print nopass",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

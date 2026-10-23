@@ -1,0 +1,315 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage{natbib}
+\usepackage{float}
+
+\title{QML power-spectrum estimation on the TR1 South field:\\
+smaller errors, clean low-$\ell$ $B$-modes, and what it took}
+\author{Weak Lensing QML pipeline}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We apply the conjugate-gradient Quadratic Maximum Likelihood (QML) estimator of \citet{Maraio2022} to the real
+TR1 South shear catalogue, with all six tomographic bins combined (21.9 galaxies\,arcmin$^{-2}$ effective), on a
+footprint of only $f_{\rm sky}=0.90\%$ at $N_{\rm side}=64$. We compare it with two independent pseudo-$C_\ell$
+estimates: NaMaster on the same map, and heracles run directly on the catalogue. The $E$-mode bandpowers of all three
+estimators agree with each other and with the fiducial model ($\chi^2=7.7$ for 7 bands). QML's errors are smaller
+than pseudo-$C_\ell$'s in every band, by $3\times$ for $EE$ and by $28\times$ ($8\times$) for $BB$ at $\ell\approx20$
+($40$). With these much tighter errors, QML's lowest-$\ell$ $B$-modes are consistent with zero, while the
+pseudo-$C_\ell$ estimators show mask-induced $E\to B$ leakage there. Two things made this work. First, a 50\% pixel-coverage cut:
+partly covered edge pixels have up to $10^4\times$ the noise QML assumes, which made the QML estimate fail completely
+($\chi^2\sim10^4$), while heracles, which weights pixels by their coverage, barely changed. Second, bandpowers of width
+$\Delta\ell=20$ formed before inverting the Fisher matrix. Re-analysing our GLASS $N_{\rm side}=64$ mock grid
+the same way shows that the large-footprint requirement reported for those mocks comes from per-$\ell$ estimation:
+with bandpowers, even the narrowest (15\%) footprint gives clean $B$-modes. The natural next step is a per-pixel noise
+model in QML, which would remove the need for the coverage cut.
+\end{abstract}
+
+\tableofcontents
+
+\section{Data and method}
+\label{sec:method}
+
+\paragraph{Data.} The TR1 South weak-lensing catalogue (31.0 million galaxies, MetaCal shapes with the mean response
+already applied per tomographic bin) and its effective-coverage map. \textbf{All six tomographic bins are combined}:
+a single bin has only 3.3--4.1 galaxies\,arcmin$^{-2}$, so the combined sample is far less noisy. After the coverage
+cut of \S\ref{sec:cut}, the effective density is $n_{\rm eff}=21.9$\,arcmin$^{-2}$ with a per-component shape
+dispersion $\sigma_\epsilon=0.334$. In shot-noise terms ($\sigma_\epsilon^2/n$) that equals a sample with
+$\sigma_\epsilon=0.3$ at $n\approx17.7$\,arcmin$^{-2}$, close to the densest case of our GLASS mocks.
+
+\paragraph{Maps and mask.} Weighted mean shear per HEALPix pixel at $N_{\rm side}=64$ (55$'$ pixels). The mask
+keeps pixels at least 50\% covered: 442 pixels, $f_{\rm sky}=0.90\%$, a patch about $20^\circ$ across.
+
+\paragraph{Estimators.} All three use the same mask and the same bandpowers:
+\begin{itemize}
+\item \textbf{QML:} the C++ conjugate-gradient implementation, with a Monte Carlo Fisher matrix (10 Gaussian maps per
+$\ell$) up to $\ell_{\max}=150$ and the fiducial cosmology of \citet{Maraio2022}. The fiducial $C^{EE}_\ell$ comes from
+CCL with $n(z)$ taken from the photometric redshifts. The shot noise is a single per-pixel variance
+$\sigma_\epsilon^2/\bar n_{\rm pix}$.
+\item \textbf{NaMaster pseudo-$C_\ell$} on the same map, with its Gaussian covariance.
+\item \textbf{heracles}, run directly on the catalogue with its own mixing matrices. It keeps the shot noise
+(\texttt{debias=False}), so that it is on the same footing as QML and NaMaster, which both estimate signal plus
+noise. The noise is subtracted from all three in the plots.
+\end{itemize}
+
+\paragraph{Bandpowers.} Seven bands of width $\Delta\ell=20$ from $\ell=10$, the last being 130--150. For QML the
+per-$\ell$ Fisher matrix $\mathbf F$ and quadratic statistic $\mathbf y$ are binned \emph{before} inverting:
+$\mathbf F_b=\mathbf W\mathbf F\mathbf W^{T}$, $\hat{\mathbf c}_b=\mathbf F_b^{-1}\mathbf W\mathbf y$, and the bandpower
+covariance is ${\rm cov}(\hat{\mathbf c}_b)=\mathbf F_b^{-1}$, with $W_{b\ell}=1$ for $\ell$ in band $b$.
+
+\paragraph{B-modes as a null test.} Weak lensing produces essentially no $B$-modes, so the measured $BB$ (after
+removing the noise) should be consistent with zero. A significant $B$-mode signal points to leakage from the
+estimator or to a systematic in the data. We judge this by comparing the $BB$ bandpowers with zero relative to their
+errors ($\chi^2$ and its probability to exceed, PTE).
+
+The full analysis is in \texttt{TR1/TR1\_south\_power\_spectra\_and\_covariance\_estimation.ipynb}; the figures here
+are made by \texttt{TR1/report\_south/make\_figures.py}.
+
+\section{Main results}
+\label{sec:results}
+
+\subsection{QML errors are smaller than pseudo-$C_\ell$'s in every band}
+
+Figure~\ref{fig:precision} shows the ratio of the pseudo-$C_\ell$ (NaMaster) to QML bandpower errors. QML is more
+precise everywhere. The gain is largest on the largest scales: $28\times$ for $BB$ and $3\times$ for $EE$ at
+$\ell\approx20$. It falls to about $1\times$ ($BB$) and $1.2\times$ ($EE$) by $\ell\approx100$. This is the pattern
+\citet{Maraio2022} predict: mask-induced mode coupling and $E/B$ mixing matter most on large scales, where the signal
+dominates the noise.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/fig1_precision.png}
+\caption{Ratio of pseudo-$C_\ell$ to QML bandpower errors for TR1 South ($EE$ and $BB$). Above 1, QML is more precise.}
+\label{fig:precision}
+\end{figure}
+
+\subsection{$B$-modes}
+
+Figure~\ref{fig:bmodes} shows the $BB$ bandpowers. At $\ell\lesssim50$ QML's $B$-modes are consistent with zero
+($+1.1\sigma$ and $-0.6\sigma$) with errors 8--28$\times$ smaller than pseudo-$C_\ell$'s. heracles' lowest band sits
+$7.9\sigma_{\rm QML}$ above zero: leakage of the strong large-scale $E$ power into $B$ through the mask. NaMaster has
+the same excess, hidden by its much larger error bar. Being able to measure large-scale $B$-modes this precisely,
+without leakage, is the main advantage of QML on a small patch.
+
+The $B$-mode test is not clean everywhere:
+\begin{itemize}
+\item \textbf{$\ell=50$--69:} $+3.1\sigma$.
+\item \textbf{$\ell\geq110$:} $+3.4\sigma$ and $+3.9\sigma$. This excess is shared by heracles and NaMaster, so it is
+in the data or its pixelisation rather than specific to QML. The most likely cause is aliasing of small-scale power
+into these multipoles at $N_{\rm side}=64$ (the band edge is near $2N_{\rm side}$), but a real systematic can't be
+excluded yet (\S\ref{sec:next}).
+\end{itemize}
+Over all seven bands, QML's $\chi^2$ against zero is $50.4$; over $\ell=10$--109 it is $15.0$ for 5 bands (PTE 0.01),
+driven by the 50--69 band.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig2_bmodes.png}
+\caption{TR1 South $BB$ bandpowers (noise removed): QML (with errors), NaMaster pseudo-$C_\ell$ (with errors, which
+extend beyond the panel at $\ell\lesssim40$), and heracles on the catalogue.}
+\label{fig:bmodes}
+\end{figure}
+
+\subsection{$E$-modes}
+
+All three estimators agree with each other and with the fiducial theory (Figure~\ref{fig:emodes}). For QML,
+$\chi^2=7.7$ for 7 bands (PTE 0.36). In the lowest band QML sits on the theory curve, while both pseudo-$C_\ell$
+estimators are low, consistent with $E$ power leaking into $B$ there.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/fig3_emodes.png}
+\caption{TR1 South $EE$ bandpowers (noise removed) from the three estimators, with the fiducial signal.}
+\label{fig:emodes}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lccccccc}
+\toprule
+band centre $\ell$ & 20 & 40 & 60 & 80 & 100 & 120 & 140 \\
+\midrule
+$\sigma^{\rm PCl}/\sigma^{\rm QML}$, $EE$ & 3.0 & 1.6 & 1.3 & 1.2 & 1.2 & 1.2 & 1.3 \\
+$\sigma^{\rm PCl}/\sigma^{\rm QML}$, $BB$ & 27.8 & 7.8 & 2.6 & 1.4 & 1.1 & 1.0 & 1.0 \\
+QML $BB/\sigma^{\rm QML}$ & 1.1 & $-0.6$ & 3.1 & 1.3 & $-0.7$ & 3.4 & 3.9 \\
+heracles $BB/\sigma^{\rm QML}$ & 7.9 & 2.4 & 2.7 & 2.5 & 0.2 & 6.6 & 7.8 \\
+\bottomrule
+\end{tabular}
+\caption{Bandpower precision and $B$-mode null test for TR1 South (noise removed from $BB$).}
+\label{tab:results}
+\end{table}
+
+\section{How the result was obtained}
+\label{sec:how}
+
+A first run, on the same data with the TR1 north notebook's settings, gave QML bandpowers 10--100$\times$ too large.
+Four changes fixed it. The first two account for almost all of the improvement.
+
+\subsection{Removing partly covered pixels}
+\label{sec:cut}
+
+At $N_{\rm side}=64$ many pixels on the edge of the survey, and along internal gaps, are only partly covered
+(Figure~\ref{fig:coverage}). They hold few galaxies, so their noise is far higher than average. QML, however, assumes
+a \emph{single} noise variance for every pixel. Figure~\ref{fig:pixelnoise} shows the real per-pixel noise variance
+($\sigma_\epsilon^2\sum w^2/(\sum w)^2$) divided by that assumed value:
+\begin{itemize}
+\item \textbf{Pixels covered less than 50\%:} median $4\times$, mean $239\times$, worst pixel $13{,}300\times$.
+\item \textbf{Kept pixels:} median 0.98, mean 1.02, maximum 1.7.
+\end{itemize}
+The cut removes 96 of 538 pixels (18\%). These are only 5.2\% of the covered area, and 5.1\% of the galaxies.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig4_coverage_cut.png}
+\caption{Left: TR1 South pixels at $N_{\rm side}=64$ kept (blue) and removed (orange) by the 50\% coverage cut: the
+survey edge and internal gaps. Right: covered fraction of every pixel touching the survey, with the cut.}
+\label{fig:coverage}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/fig5_pixel_noise.png}
+\caption{Real per-pixel noise variance divided by the single value QML assumes, against covered fraction.}
+\label{fig:pixelnoise}
+\end{figure}
+
+\subsection{QML depends on the cut; heracles does not}
+
+Figure~\ref{fig:cut} compares both estimators with and without the cut.
+\begin{itemize}
+\item \textbf{QML without the cut} is badly wrong: $EE$ is 3--10$\times$ above theory and $BB$ is 10--100$\times$
+above zero, with $\chi^2=13{,}407$ ($EE$) and $32{,}228$ ($BB$) for 7 bands.
+\item \textbf{QML with the cut:} $\chi^2=7.7$ and $50.4$.
+\item \textbf{heracles barely changes.} It works from the catalogue's galaxy weights and the fractional coverage map,
+so partly covered pixels are automatically down-weighted.
+\end{itemize}
+So the edge pixels hold no anomalous signal. The failure was entirely QML's uniform-noise assumption, which is what
+the per-pixel noise model of \S\ref{sec:next} would fix properly.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig6_cut_effect.png}
+\caption{QML (circles) and heracles (squares) with (filled) and without (open) the 50\% coverage cut. Noise removed;
+symmetric-log axis. Left: $EE$ with the fiducial signal; right: $BB$ with zero.}
+\label{fig:cut}
+\end{figure}
+
+\subsection{Bandpowers at least as wide as the patch can resolve}
+
+A $20^\circ$ patch can't separate multipoles closer than $\Delta\ell\approx2\pi/\theta\approx18$. The north
+notebook's binning (equal numbers of modes per band) made the high-$\ell$ bands only 5--7 multipoles wide.
+Neighbouring QML bandpowers were then almost perfectly anticorrelated (correlation down to $-0.92$) and alternated in
+sign by $\pm5\sigma$. Uniform bands of width 20 reduce the neighbouring correlations to about $-0.2$.
+
+\subsection{Noise accounting}
+
+The shot-noise level and density are computed from the galaxies in kept pixels only. Counting the removed galaxies
+over the kept area had overstated the density (23.1 instead of 21.9\,arcmin$^{-2}$) and understated QML's noise
+variance by 5\%.
+
+\section{Why such a small footprint works: comparison with the GLASS mocks}
+\label{sec:glass}
+
+Our GLASS $N_{\rm side}=64$ mock grid (log-normal catalogues; densities $n=1,10,20$\,arcmin$^{-2}$ with
+$\sigma_\epsilon=0.3$; footprints with $f_{\rm sky}=15$, 31 and 56\%) suggested that QML needs both a large footprint
+and a high density: at $f_{\rm sky}=15\%$ the $B$-modes were leakage-dominated at every density. TR1 South has
+$f_{\rm sky}=0.9\%$, 17 times smaller than the smallest GLASS footprint.
+
+That GLASS assessment used \emph{per-$\ell$} QML estimates. Each multipole is then estimated by inverting a nearly
+singular, Monte-Carlo-estimated Fisher matrix, which is unstable when the sky is heavily masked. We re-analysed the
+same GLASS Fisher matrices and $y_\ell$ the TR1 way, with $\Delta\ell=20$ bandpowers formed before inversion
+(Table~\ref{tab:glass}, Figure~\ref{fig:glass}). \textbf{Every GLASS case then gives a clean $B$-mode null test,
+including the 15\% footprint at all three densities.}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llccc}
+\toprule
+footprint & $n$\,[arcmin$^{-2}$] & per-$\ell$ $|BB|$/noise & bandpower $|BB|$/noise & bandpower PTE \\
+\midrule
+(55,125)$^\circ$, $f_{\rm sky}=15\%$ & 1 / 10 / 20 & 75.1 / 30.4 / 30.8 & 0.95 / 1.11 / 1.03 & 0.18 / 0.13 / 0.68 \\
+(65,115)$^\circ$, $f_{\rm sky}=31\%$ & 1 / 10 / 20 & 1.0 / 1.5 / 1.2 & 0.89 / 1.07 / 1.07 & 0.03 / 0.47 / 0.56 \\
+(75,105)$^\circ$, $f_{\rm sky}=56\%$ & 1 / 10 / 20 & 0.9 / 1.0 / 1.1 & 0.98 / 0.98 / 1.04 & 0.11 / 0.43 / 0.46 \\
+\bottomrule
+\end{tabular}
+\caption{GLASS $N_{\rm side}=64$ grid, QML $B$-mode null test. Per-$\ell$: the metric of the GLASS report (mean over
+$\ell\leq64$). Bandpowers: $\Delta\ell=20$ bands covering $\ell=10$--69, with the $\chi^2$ PTE against pure noise.}
+\label{tab:glass}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/fig7_glass_plane.png}
+\caption{The GLASS grid in the sky-fraction / density plane (density scaled to $\sigma_\epsilon=0.3$), coloured by
+whether the QML $B$-mode null test is clean. Left: per-$\ell$ estimates, as in the GLASS report. Right: $\Delta\ell=20$
+bandpowers. The filled star is TR1 South with all bins combined; open stars are its individual tomographic bins.}
+\label{fig:glass}
+\end{figure}
+
+So TR1 South works because of three things together:
+\begin{enumerate}
+\item it is estimated as \textbf{bandpowers}, which removes the per-$\ell$ instability behind the footprint
+requirement;
+\item it is \textbf{dense}: combining all bins puts it close to the best GLASS density;
+\item after the coverage cut its \textbf{noise really is uniform}, as QML assumes.
+\end{enumerate}
+Two caveats apply. The GLASS bandpower test covers only $\ell=10$--69 (three bands), and footprints of at least 15\%.
+Going down to $f_{\rm sky}=0.9\%$ is supported by the TR1 results themselves (the $E$-mode agreement and the
+consistency between estimators) rather than by mocks at that size. Mocks matching the TR1 South footprint would close
+this gap.
+
+\section{Caveats}
+\label{sec:caveats}
+\begin{itemize}
+\item \textbf{All tomographic bins are combined.} This is a single-sample measurement, not a tomographic analysis.
+\item \textbf{The QML Fisher matrix is a Monte Carlo estimate from 10 maps per $\ell$} (the paper used 25). It is
+seeded from the clock, so runs aren't exactly reproducible. With bandpowers the matrix is positive definite, but its
+scatter enters the errors at the 10--20\% level at low $\ell$.
+\item \textbf{The kept pixels' noise still varies} by 0.85--1.6$\times$ about the assumed value, increasing towards
+the cut.
+\item \textbf{The $B$-mode excess at $\ell\geq110$} is common to all three estimators and unexplained.
+\item \textbf{The MetaCal selection response} can't be read from the catalogue. It would change the shear amplitude
+(the $EE$ normalisation), not the noise or $B$-mode results.
+\item The fiducial cosmology is fixed; $\ell<10$ is not used.
+\end{itemize}
+
+\section{Next steps}
+\label{sec:next}
+\begin{enumerate}
+\item \textbf{Variable (per-pixel) noise in QML.} Replace the single \texttt{noise\_var} with a map of each pixel's
+noise variance, $\sigma_\epsilon^2\sum w^2/(\sum w)^2$. In the C++ this is contained: the noise term of the
+covariance product (\texttt{noise\_var * x} in \texttt{cpp/detail/MatrixReplacement.h}) becomes an element-wise
+product with a per-pixel vector, read in alongside the mask. QML could then keep every pixel, weighting each
+correctly as heracles does. This removes the coverage cut and the remaining 0.85--1.6$\times$ variation, and
+recovers the 5\% of galaxies the cut discards. \citet{Maraio2022} identify exactly this as a strength of pixel-based
+QML over pseudo-$C_\ell$.
+\item \textbf{Per-tomographic-bin analysis.} Each bin has 3.3--4.1 galaxies\,arcmin$^{-2}$, equivalent to
+$n\approx2.3$--3.6 at $\sigma_\epsilon=0.3$. The re-binned GLASS results pass the null test even at $n=1$, so a
+per-bin analysis looks feasible, at larger relative errors.
+\item \textbf{The high-$\ell$ $B$-mode excess:} repeat at $N_{\rm side}=128$. If the excess moves with the pixel
+scale it is aliasing; if it stays, it is in the data.
+\item \textbf{Fisher accuracy:} more Monte Carlo maps (25--50) with fixed seeds, or, for a mask this small (884 data
+values), the exact Fisher matrix computed directly, removing the Monte Carlo noise altogether.
+\item \textbf{TR1 north:} rerun with the same pipeline (coverage cut, $\Delta\ell\approx25$--30 for its smaller patch).
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem[Maraio, Hall \& Taylor(2022)]{Maraio2022}
+A.~Maraio, A.~Hall, A.~N.~Taylor,
+\emph{Testing Quadratic Maximum Likelihood estimators for forthcoming Stage-IV weak lensing surveys},
+MNRAS \textbf{000}, 1--14 (2022), arXiv:2207.10412.
+\end{thebibliography}
+
+\end{document}

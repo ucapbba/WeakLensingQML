@@ -144,8 +144,11 @@ void ComputeCl_EB::read_in_power_spec_EB()
   // Read in the Cl values
   std::ifstream Cl_file(this->cl_datapath);
 
-  // Go through each line of the file, where the current line is our ell value
-  for(auto [line_idx, cl] = std::tuple{0, std::string()}; getline(Cl_file, cl); ++line_idx)
+  // Go through each line of the file, where the current line is our ell value.
+  // The Cl file may contain more rows than l_max+1 (e.g. it can be generated
+  // independently of the QML l_max), so stop once our fixed-size arrays are full
+  // to avoid writing out of bounds.
+  for(auto [line_idx, cl] = std::tuple{0, std::string()}; line_idx <= l_max && getline(Cl_file, cl); ++line_idx)
   {
     // Convert the current string to a double
     const auto cl_val = std::stod(cl);
@@ -312,7 +315,7 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
 
   std::cout << "Computing fiducial y_ells now\n";
   // Need a more precise fiducial spectra, so use an order-of-magnitude more maps to compute average from
-  #pragma omp parallel for schedule(dynamic)
+  #pragma omp parallel for schedule(dynamic) num_threads(10)
   for(int i = 0; i < num_maps; ++i)
   {
     ComputeCl_EB worker(this->cl_datapath, this->mask, this->noise_var);
@@ -353,7 +356,7 @@ void ComputeCl_EB::estimate_Fisher_matrix_EB(const std::string& fisher_matrix_ou
     std::cout << "ell: ";
     // Each thread gets its own ComputeCl_EB worker so the CG solver, map buffers, and
     // RNG state (all mutated during generate_map_EB/compute_y_ell_EB) are never shared
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(dynamic) num_threads(10)
     for(int ell = 2; ell <= l_max; ++ell)
     {
       ComputeCl_EB worker(this->cl_datapath, this->mask, this->noise_var);

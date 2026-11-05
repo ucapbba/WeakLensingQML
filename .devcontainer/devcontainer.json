@@ -1,0 +1,19 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "WeakLensingQML",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": ".."
+	},
+
+	// Grant ptrace capability so gdb can attach to running processes (needed to debug
+	// native code, e.g. attaching to the Jupyter kernel process to step into py_library.cpp).
+	"runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"],
+
+	// Build the native C++ library once the container is created.
+	"postCreateCommand": "sudo setcap cap_sys_ptrace+eip $(readlink -f $(which gdb)) && cmake -S cpp -B cpp/build && cmake --build cpp/build -j2"
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

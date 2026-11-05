@@ -125,3 +125,24 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Project data / pipeline artifacts
+data
+TR1/data
+TR1/pipeline_input
+TR1/pipeline_output
+TR1/catalog.fits
+TR1/vmap.fits.gz
+TR1/nz.npz
+Map_N*
+cpp/buildDELETTEMEMEEE
+cpp/build-release
+report/QML_GLASS_report.toc
+report/QML_GLASS_report.out
+examples/full_weights
+examples/pixel_window_functions
+TR1/report_south/summary_figures/
+TR1/report_south/figures/
+TR1/report_south/TR1_South_QML_summary.pdf
+TR1/report_south/TR1_South_QML_report.pdf
+TR1/TR1_south_power_spectra_and_covariance_estimation.ipynb
